@@ -26,52 +26,25 @@ and also the following tactics:
 
 variables (P Q R : Prop)
 
-example : P ∧ Q → P :=
-begin
-  sorry
-end
+example : P ∧ Q → P := and.left
 
-example : P ∧ Q → Q :=
-begin
-  sorry
-end
+example : P ∧ Q → Q := and.right
 
-example : (P → Q → R) → (P ∧ Q → R) :=
-begin
-  sorry
-end
+example : (P → Q → R) → (P ∧ Q → R) := λhpqr pq, hpqr pq.1 pq.2
 
-example : P → Q → P ∧ Q :=
-begin
-  sorry
-end
+example : P → Q → P ∧ Q := λhp hq, and.intro hp hq
 
 /-- `∧` is symmetric -/
-example : P ∧ Q → Q ∧ P :=
-begin
-  sorry
-end
+example : P ∧ Q → Q ∧ P := λpq, and.intro pq.2 pq.1
 
-example : P → P ∧ true :=
-begin
-  sorry
-end
+example : P → P ∧ true := λhp, and.intro hp true.intro
 
-example : false → P ∧ false :=
-begin
-  sorry
-end
+example : false → P ∧ false := false.elim
 
 /-- `∧` is transitive -/
-example : (P ∧ Q) → (Q ∧ R) → (P ∧ R) :=
-begin
-  sorry,
-end
+example : (P ∧ Q) → (Q ∧ R) → (P ∧ R) := λhpq hqr, and.intro hpq.1 hqr.2
 
-example : ((P ∧ Q) → R) → (P → Q → R) :=
-begin
-  sorry,
-end
+example : ((P ∧ Q) → R) → (P → Q → R) := λhpqr hp hq, hpqr (and.intro hp hq)
 
 
 

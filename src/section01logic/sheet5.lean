@@ -22,54 +22,27 @@ and also the following two new tactics:
 
 -/
 
-variables (P Q R S : Prop)
+variables (P Q R S X Y : Prop)
 
-example : P ↔ P :=
-begin
-  sorry
-end
+example : P ↔ P := iff.intro id id
 
-example : (P ↔ Q) → (Q ↔ P) :=
-begin
-  sorry
-end
+example : (P ↔ Q) → (Q ↔ P) := λh, iff.intro h.2 h.1
 
 example : (P ↔ Q) ↔ (Q ↔ P) :=
-begin
-  sorry
-end
+  have f : ∀{X Y}, (X ↔ Y) → (Y ↔ X), from (λ_ _ h, iff.intro h.2 h.1),
+  iff.intro f f
 
-example : (P ↔ Q) → (Q ↔ R) → (P ↔ R) :=
-begin
-  sorry
-end
+example : (P ↔ Q) → (Q ↔ R) → (P ↔ R) := λhpq hqr, iff.intro (hqr.1 ∘ hpq.1) (hpq.2 ∘ hqr.2)
 
-example : P ∧ Q ↔ Q ∧ P :=
-begin
-  sorry
-end
+example : P ∧ Q ↔ Q ∧ P := and.comm
 
-example : ((P ∧ Q) ∧ R) ↔ (P ∧ (Q ∧ R)) :=
-begin
-  sorry
-end
+example : ((P ∧ Q) ∧ R) ↔ (P ∧ (Q ∧ R)) := and.assoc
 
-example : P ↔ (P ∧ true) :=
-begin
-  sorry
-end
+example : P ↔ (P ∧ true) := iff.intro (λh, and.intro h true.intro) (and.left)
 
-example : false ↔ (P ∧ false) :=
-begin
-  sorry
-end
+example : false ↔ (P ∧ false) := iff.intro (false.elim) and.right
 
 example : (P ↔ Q) → (R ↔ S) → (P ∧ R ↔ Q ∧ S) :=
-begin
-  sorry
-end
+  λhpq hrs, iff.intro (λhpr, and.intro (hpq.1 hpr.1) (hrs.1 hpr.2)) (λhqs, and.intro (hpq.2 hqs.1) (hrs.2 hqs.2))
 
-example : ¬ (P ↔ ¬ P) :=
-begin
-  sorry,
-end
+example : ¬ (P ↔ ¬ P) := λ h, have hnp : ¬ P, from λhp, h.1 hp hp, have hp : P, from h.2 hnp, h.1 hp hp

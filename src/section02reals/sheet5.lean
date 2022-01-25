@@ -12,7 +12,18 @@ import solutions.section02reals.sheet3 -- import the definition of `tendsto` fro
 theorem tendsto_neg {a : ℕ → ℝ} {t : ℝ} (ha : tendsto a t) :
   tendsto (λ n, - a n) (-t) :=
 begin
-  sorry,
+  unfold tendsto,
+  intro,
+  intro hε,
+  specialize ha ε hε,
+  cases ha with b hb,
+  use b,
+  intros n hbn,
+  specialize hb n hbn,
+  norm_num,
+  rw ←(abs_neg (t - a n)),
+  norm_num,
+  exact hb,
 end
 
 /-
@@ -32,16 +43,33 @@ theorem tendsto_add {a b : ℕ → ℝ} {t u : ℝ}
   (ha : tendsto a t) (hb : tendsto b u) :
   tendsto (λ n, a n + b n) (t + u) :=
 begin
-  sorry
+  intros ε hε,
+  unfold tendsto,
+  have : ∃ε', ε' = ε / 2, use ε/2,
+  cases this with ε' hε',
+  unfold tendsto at ha hb,
+  have hε'' : ε' > 0, linarith,
+  specialize ha ε' hε'',
+  specialize hb ε' hε'',
+  cases ha with ba ha,
+  cases hb with bb hb,
+  use (max ba bb),
+  intro n,
+  specialize ha n,
+  specialize hb n,
+  intro hm,
+  have : ba ≤ n ∧ bb ≤ n, exact (max_le_iff.mp hm),
+  specialize ha this.1,
+  specialize hb this.2,
+  have : |a n - t| + |b n - u| < ε, linarith,
+  have : (a n - t) + (b n - u) = a n + b n - (t + u), ring,
+  rw ←this,
+  have : |(a n - t) + (b n - u)| ≤ |a n - t| + |b n - u|, exact abs_add (a n - t) (b n - u),
+  linarith,
 end
 
 /-- If `a(n)` tends to t and `b(n)` tends to `u` then `a(n) - b(n)`
 tends to `t - u`. -/
 theorem tendsto_sub {a b : ℕ → ℝ} {t u : ℝ}
   (ha : tendsto a t) (hb : tendsto b u) :
-  tendsto (λ n, a n - b n) (t - u) :=
-begin
-  -- this one follows without too much trouble from earlier results.
-  sorry
-end
-
+  tendsto (λ n, a n - b n) (t - u) := tendsto_add ha (tendsto_neg hb)

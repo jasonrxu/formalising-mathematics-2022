@@ -33,57 +33,36 @@ and the following tactics may also be useful:
 
 variables (P Q R : Prop)
 
-example : ¬ true → false :=
-begin
-  sorry
-end
+example : ¬ true → false := λf, f (true.intro)
 
-example : false → ¬ true :=
-begin
-  sorry
-end
+example : false → ¬ true := λx _, x
 
-example : ¬ false → true :=
-begin
-  sorry
-end
+example : ¬ false → true := λ_, true.intro
 
-example : true → ¬ false :=
-begin
-  sorry
-end
+example : true → ¬ false := λ_ f, f
 
-example : false → ¬ P :=
-begin
-  sorry
-end
+example : false → ¬ P := λf _, f
 
-example : P → ¬ P → false :=
-begin
-  sorry
-end
+example : P → ¬ P → false := λx f, f x
 
-example : P → ¬ (¬ P) :=
-begin
-  sorry
-end
+example : P → ¬ (¬ P) := λx f, f x
 
-example : (P → Q) → (¬ Q → ¬ P) :=
-begin
-  sorry
-end
+example : (P → Q) → (¬ Q → ¬ P) := λpq nq p, nq (pq p)
 
-example : ¬ ¬ false → false :=
-begin
-  sorry
-end
+example : ¬ ¬ false → false := λf, f id
 
 example : ¬ ¬ P → P :=
 begin
-  sorry
+  intro nnp,
+  by_contra h,
+  exact (nnp h)
 end
 
 example : (¬ Q → ¬ P) → (P → Q) :=
 begin
-  sorry,
+  intros hnqnp hp,
+  by_contra nq,
+  apply hnqnp,
+  assumption,
+  assumption
 end

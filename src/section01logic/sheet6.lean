@@ -26,55 +26,43 @@ and also the following tactics
 
 variables (P Q R S : Prop)
 
-example : P → P ∨ Q :=
-begin
-  sorry
-end
+example : P → P ∨ Q := or.inl
 
-example : Q → P ∨ Q :=
-begin
-  sorry,
-end
+example : Q → P ∨ Q := or.inr
 
-example : P ∨ Q → (P → R) → (Q → R) → R :=
-begin
-  sorry
-end
+example : P ∨ Q → (P → R) → (Q → R) → R := or.elim
 
 -- symmetry of `or`
-example : P ∨ Q → Q ∨ P :=
-begin
-  sorry
-end
+example : P ∨ Q → Q ∨ P := λh, or.elim h or.inr or.inl
 
 -- associativity of `or`
-example : (P ∨ Q) ∨ R ↔ P ∨ (Q ∨ R) :=
-begin
-  sorry,
-end
+example : (P ∨ Q) ∨ R ↔ P ∨ (Q ∨ R) := or.assoc
 
-example : (P → R) → (Q → S) → P ∨ Q → R ∨ S :=
-begin
-  sorry,
-end
+example : (P → R) → (Q → S) → P ∨ Q → R ∨ S := λhpr hqs hpq, or.elim hpq (or.inl ∘ hpr) (or.inr ∘ hqs)
 
-example : (P → Q) → P ∨ R → Q ∨ R :=
-begin
-  sorry,
-end
+example : (P → Q) → P ∨ R → Q ∨ R := λhpq hpr, or.elim hpr (or.inl ∘ hpq) or.inr
 
 example : (P ↔ R) → (Q ↔ S) → (P ∨ Q ↔ R ∨ S) :=
-begin
-  sorry,
-end
+  λhpr hqs, iff.intro (λhpq, or.elim hpq (or.inl ∘ hpr.1) (or.inr ∘ hqs.1))
+                      (λhrs, or.elim hrs (or.inl ∘ hpr.2) (or.inr ∘ hqs.2))
 
 -- de Morgan's laws
 example : ¬ (P ∨ Q) ↔ ¬ P ∧ ¬ Q :=
-begin
-  sorry
-end
+  iff.intro (λhnpq, and.intro (hnpq ∘ or.inl) (hnpq ∘ or.inr))
+            (λhnpnq hpq, or.elim hpq hnpnq.1 hnpnq.2)
 
 example : ¬ (P ∧ Q) ↔ ¬ P ∨ ¬ Q :=
-begin
-  sorry
-end
+  iff.intro (λhnpq,
+              begin
+                by_cases hp : P,
+                {
+                  right,
+                  intro hq,
+                  exact (hnpq ⟨hp, hq⟩)
+                },
+                {
+                  left,
+                  exact hp
+                }
+              end)
+            (λhnpnq hpq, or.elim hnpnq (λhnp, hnp hpq.1) (λhnq, hnq hpq.2))

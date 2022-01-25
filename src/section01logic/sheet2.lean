@@ -30,50 +30,23 @@ variables (P Q R : Prop)
 
 example : true :=
 begin
-  sorry
+  triv
 end
 
-example : true → true :=
-begin
-  sorry
-end
+example : true → true := λx, x
 
-example : false → true :=
-begin
-  sorry
-end
+example : false → true := λ_, true.intro
 
-example : false → false :=
-begin
-  sorry
-end
+example : false → false := λx, x
 
-example : (true → false) → false :=
-begin
-  sorry
-end
+example : (true → false) → false := λf, f true.intro
 
-example : false → P :=
-begin
-  sorry
-end
+example : false → P := false.elim
 
-example : true → false → true → false → true → false :=
-begin
-  sorry
-end
+example : true → false → true → false → true → false := λ_ f _ _ _, f
 
-example : P → ((P → false) → false) :=
-begin
-  sorry
-end
+example : P → ((P → false) → false) := λx f, f x
 
-example : (P → false) → P → Q :=
-begin
-  sorry
-end
+example : (P → false) → P → Q := λf x, false.elim (f x)
 
-example : (true → false) → P :=
-begin
-  sorry
-end
+example : (true → false) → P := λf, false.elim (f true.intro)
