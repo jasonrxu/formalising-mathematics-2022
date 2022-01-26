@@ -64,12 +64,16 @@ See if you can prove all seven using (for the most part) the `rw` tactic.
 
 @[simp] lemma inv_mul_cancel_left : a⁻¹ * (a * b) = b :=
 begin
-  sorry
+  rw ←mul_assoc,
+  rw inv_mul_self,
+  rw one_mul,
 end
 
 @[simp] lemma mul_inv_cancel_left : a * (a⁻¹ * b) = b :=
 begin
-  sorry
+  rw ←mul_assoc,
+  rw mul_inv_self,
+  rw one_mul,
 end
 
 lemma left_inv_eq_right_inv {a b c : G} (h1 : b * a = 1) (h2 : a * c = 1) : 
@@ -77,27 +81,74 @@ lemma left_inv_eq_right_inv {a b c : G} (h1 : b * a = 1) (h2 : a * c = 1) :
 begin
   -- hint for this one : establish the auxiliary fact
   -- that `b * (a * c) = (b * a) * c` with the `have` tactic.
-  sorry,
+  have h : b * (a * c) = (b * a) * c, rw mul_assoc,
+  rw [h1, h2] at h,
+  rw [mul_one, one_mul] at h,
+  exact h,
 end
 
 lemma mul_eq_one_iff_eq_inv : a * b = 1 ↔ a⁻¹ = b :=
 begin
-  sorry,
+  split,
+  {
+    intro h,
+    exact left_inv_eq_right_inv (inv_mul_self a) h,
+  },
+  {
+    intro h,
+    rw ←h,
+    rw mul_inv_self,
+  }
 end
 
 @[simp] lemma one_inv : (1 : G)⁻¹ = 1 :=
 begin
-  sorry,
+  suffices h : (1 : G) * 1 = 1,
+  {
+    exact (mul_eq_one_iff_eq_inv 1 1).mp h,
+  },
+  rw mul_one,
 end
 
-@[simp] lemma inv_inv : (a⁻¹)⁻¹ = a :=
-begin
-  sorry,
-end
+@[simp] lemma inv_inv : (a⁻¹)⁻¹ = a := (mul_eq_one_iff_eq_inv a⁻¹ a).mp (inv_mul_self a)
 
 @[simp] lemma mul_inv_rev : (a * b)⁻¹ = b⁻¹ * a⁻¹ := 
 begin
-  sorry,
+  suffices h : (a * b) * (b⁻¹ * a⁻¹) = 1,
+  {
+    exact (mul_eq_one_iff_eq_inv (a * b) (b⁻¹ * a⁻¹)).mp h,
+  },
+  simp,
+end
+
+lemma mul_left : a * b = a * c ↔ b = c :=
+begin
+  split,
+  {
+    intro h,
+    have h2 := @eq.subst G (λ g, a⁻¹ * a * b = a⁻¹ * g) (a * b) (a * c) h (by simp),
+    simp at h2,
+    exact h2,
+  },
+  {
+    intro h,
+    rw h,
+  }
+end
+
+lemma mul_right : a * c = b * c ↔ a = b :=
+begin
+  split,
+  {
+    intro h,
+    have h2 := @eq.subst G (λ g, a * c * c⁻¹ = g * c⁻¹) (a * c) (b * c) h (by simp),
+    simp at h2,
+    exact h2,
+  },
+  {
+    intro h,
+    rw h,
+  }
 end
 
 /-
@@ -118,7 +169,20 @@ example (G : Type) [mygroup G] (a b : G) :
 example (G : Type) [mygroup G] (h : ∀ g : G, g * g = 1) :
   ∀ g h : G, g * h = h * g :=
 begin
-  sorry
+  intros x y,
+  suffices h : (x * y) * (x * y) = (y * x) * (x * y),
+  {
+    exact (mul_right (x * y) (y * x) (x * y)).mp h,
+  },
+  rw h (x * y),
+  suffices : 1 = y * (x * x) * y,
+  {
+    rw this,
+    simp,
+  },
+  rw h x,
+  simp,
+  rw h y,
 end
 
 end mygroup

@@ -53,14 +53,51 @@ first.
 
 -/
 
+lemma mul_left_cancel : a * b = a * c → b = c :=
+begin
+  intro h,
+  have h2 := @eq.subst _ (λ g, a⁻¹ * a * b = a⁻¹ * g) (a * b) (a * c) h,
+  dsimp at h2,
+  rw inv_mul_self at h2,
+  rw ←mul_assoc at h2,
+  rw inv_mul_self at h2,
+  specialize h2 (by triv),
+  rw one_mul at h2,
+  rw ←mul_assoc at h2,
+  rw inv_mul_self at h2,
+  rw one_mul at h2,
+  exact h2,
+end
+
+lemma mul_eq_of_eq_inv_mul : b = a⁻¹ * c → a * b = c :=
+begin
+  intro h,
+  rw ←one_mul b at h,
+  rw ←inv_mul_self a at h,
+  rw mul_assoc at h,
+  exact mul_left_cancel _ _ _ h,
+end
+
 lemma mul_one (a : G) : a * 1 = a :=
 begin
-  sorry,
+  apply mul_eq_of_eq_inv_mul,
+  rw inv_mul_self a,
+end
+
+example (a : G) : a * 1 = a :=
+begin
+  have : (1 : G) * 1 = 1, rw one_mul,
+  nth_rewrite 0 ←(inv_mul_self a) at this,
+  nth_rewrite_rhs 0 ←(inv_mul_self a) at this,
+  rw mul_assoc at this,
+  have := mul_left_cancel _ _ _ this,
+  exact this,
 end
 
 lemma mul_inv_self (a : G) : a * a⁻¹ = 1 :=
 begin
-  sorry,
+  apply mul_eq_of_eq_inv_mul,
+  rw mul_one,
 end
 
 def to_mygroup (G : Type) [myweakgroup G] : mygroup G :=
