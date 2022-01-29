@@ -53,45 +53,28 @@ first.
 
 -/
 
-lemma mul_left_cancel : a * b = a * c → b = c :=
+lemma mul_left_cancel (h : a * b = a * c) : b = c :=
 begin
-  intro h,
-  have h2 := @eq.subst _ (λ g, a⁻¹ * a * b = a⁻¹ * g) (a * b) (a * c) h,
-  dsimp at h2,
-  rw inv_mul_self at h2,
-  rw ←mul_assoc at h2,
-  rw inv_mul_self at h2,
-  specialize h2 (by triv),
-  rw one_mul at h2,
-  rw ←mul_assoc at h2,
-  rw inv_mul_self at h2,
-  rw one_mul at h2,
-  exact h2,
+calc 
+     b = 1 * b         : by rw one_mul
+...    = a⁻¹ * a * b   : by rw inv_mul_self
+...    = a⁻¹ * (a * b) : by rw mul_assoc
+...    = a⁻¹ * (a * c) : by rw h
+...    = a⁻¹ * a * c   : by rw mul_assoc
+...    = 1 * c         : by rw inv_mul_self
+...    = c             : by rw one_mul
 end
 
-lemma mul_eq_of_eq_inv_mul : b = a⁻¹ * c → a * b = c :=
+lemma mul_eq_of_eq_inv_mul (h : b = a⁻¹ * c) : a * b = c :=
 begin
-  intro h,
-  rw ←one_mul b at h,
-  rw ←inv_mul_self a at h,
-  rw mul_assoc at h,
-  exact mul_left_cancel _ _ _ h,
+  apply mul_left_cancel a⁻¹,
+  rw [← mul_assoc, inv_mul_self, one_mul, h],
 end
 
 lemma mul_one (a : G) : a * 1 = a :=
 begin
   apply mul_eq_of_eq_inv_mul,
-  rw inv_mul_self a,
-end
-
-example (a : G) : a * 1 = a :=
-begin
-  have : (1 : G) * 1 = 1, rw one_mul,
-  nth_rewrite 0 ←(inv_mul_self a) at this,
-  nth_rewrite_rhs 0 ←(inv_mul_self a) at this,
-  rw mul_assoc at this,
-  have := mul_left_cancel _ _ _ this,
-  exact this,
+  rw inv_mul_self,
 end
 
 lemma mul_inv_self (a : G) : a * a⁻¹ = 1 :=
@@ -125,3 +108,18 @@ class my_even_weaker_group (G : Type)
 (mul_assoc : ∀ a b c : G, (a * b) * c = a * (b * c))
 (mul_one : ∀ a : G, a * 1 = a)
 (inv_mul_self : ∀ a : G, a⁻¹ * a = 1)
+
+instance : my_even_weaker_group bool :=
+{ one := tt,
+  mul := λ x y, x, -- x * y = x for all x and y
+  inv := λ x, tt, -- define x⁻¹ := 1 for all x
+  mul_assoc := dec_trivial,
+  mul_one := dec_trivial,
+  inv_mul_self := dec_trivial }
+
+example : ¬ (∀ g : bool, 1 * g = g) :=
+begin
+  intro h,
+  specialize h ff,
+  cases h,
+end

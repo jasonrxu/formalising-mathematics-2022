@@ -33,7 +33,6 @@ notation G ` →** ` H := my_group_hom G H
 -- A group hom is a function, and so we set up a "coercion"
 -- so that a group hom can be regarded as a function (even
 -- though it's actually a pair consisting of a function and an axiom)
--- instance : has_coe (G →** H) (G → H) := { coe := my_group_hom.to_fun }
 instance : has_coe_to_fun (G →** H) (λ _, G → H) :=
 { coe := my_group_hom.to_fun }
 
@@ -56,23 +55,20 @@ variable (f : G →** H)
 -- is called. Uncomment it, look at the output, and remember it. It's
 -- a useful part of the group theory API.
 
--- example (a b : G) : a * b = b ↔ a = 1 := by library_search -- look at the output.
+-- example (a b : G) : a * b = b ↔ a = 1 := mul_left_eq_self
 
 -- Now see if you can do these.
 @[simp] lemma map_one : f 1 = 1 :=
 begin
-  have : f 1 = f 1 := by simp,
-  nth_rewrite 0 ←mul_one (1 : G) at this,
-  rw map_mul at this,
-  exact mul_right_eq_self.mp this,
+  have h := f.map_mul 1 1,
+  simpa using h,
 end
 
 lemma map_inv (a : G) : f a⁻¹ = (f a)⁻¹ :=
 begin
-  have := map_one f,
-  rw ←mul_inv_self a at this,
-  rw map_mul at this,
-  exact (inv_eq_of_mul_eq_one this).symm,
+  rw ← mul_eq_one_iff_eq_inv,
+  rw ← f.map_mul,
+  simp,
 end
 
 variable (G)
@@ -80,134 +76,142 @@ variable (G)
 /-- `id G` is the identity group homomorphism from `G` to `G`. -/
 def id : G →** G :=
 { to_fun := λ a, a,
-  map_mul' := by simp } -- fill in the proof that the identity function is a group hom!
+  map_mul' := begin intros, refl, end }
 
 variables {K : Type} [group K] {G}
 
 /-- `φ.comp ψ` is the composite of `φ` and `ψ`. -/
 def comp (φ : G →** H) (ψ : H →** K) : G →** K :=
 { to_fun := λ g, ψ (φ g),
-  map_mul' := begin intros, rw map_mul, rw map_mul, end -- fill in the proof that composite of two group homs is a group hom!
+  map_mul' := begin
+    intros a b,
+    rw [φ.map_mul, ψ.map_mul],
+  end
 }
 
 -- The next three lemmas are pretty standard, but they are also in fact
 -- the axioms that show that groups form a category.
--- You'll need functional extensionality to do this: two functions
--- are equal iff they agree on all inputs. Apply this fact in Lean
--- with the `ext` tactic.
 lemma id_comp : (id G).comp f = f :=
 begin
-  ext,
+  ext g,
   refl,
 end
 
 lemma comp_id : f.comp (id H) = f :=
 begin
-  ext,
+  ext g,
   refl,
 end
 
 lemma comp_assoc {L : Type} [group L] (φ : G →** H) (ψ : H →** K) (ρ : K →** L) :
   (φ.comp ψ).comp ρ = φ.comp (ψ.comp ρ) :=
 begin
-  ext,
   refl,
 end
 
 /-- The kernel of a group homomorphism, as a subgroup of the source group. -/
 def ker (f : G →** H) : subgroup G :=
 { carrier := {g : G | f g = 1 },
-  one_mem' := begin exact map_one f end,
-  mul_mem' := begin intros a b ha hb, simp [map_mul, *] at *,  end,
-  inv_mem' := begin intros x hx, simp [map_inv, *] at *, end,
+  one_mem' := f.map_one,
+  mul_mem' := begin
+    intros a b ha hb,
+    simp [f.map_mul, *] at *,
+  end,
+  inv_mem' := begin
+    intros a ha,
+    simp [f.map_inv, *] at *,
+  end,
 }
 
 /-- The image of a group homomorphism, as a subgroup of the target group. -/
 def im (f : G →** H) : subgroup H :=
 { carrier := {h : H | ∃ g : G, f g = h },
-  one_mem' := begin use 1, simp, end,
-  mul_mem' :=
-  begin
-    intros a b ha hb,
-    cases ha with a' ha,
-    cases hb with b' hb,
-    use a' * b',
-    simp [map_mul, *],
+  one_mem' := begin 
+    use 1,
+    exact f.map_one,
   end,
-  inv_mem' :=
-  begin
-    intros x hx,
-    cases hx with x' hx,
-    use x'⁻¹,
-    simp [map_inv, *],
+  mul_mem' := begin
+    rintro c d ⟨a, ha⟩ ⟨b, hb⟩,
+    exact ⟨a * b, by rw [f.map_mul, ha, hb]⟩,
+  end,
+  inv_mem' := begin
+    rintro c ⟨a, ha⟩,
+    exact ⟨a⁻¹, by rw [f.map_inv, ha]⟩,
   end,
 }
 
 /-- The image of a subgroup under a group homomorphism, as a subgroup. -/
 def map (f : G →** H) (K : subgroup G) : subgroup H :=
 { carrier := {h : H | ∃ g : G, g ∈ K ∧ f g = h },
-  one_mem' := begin use 1, simp [map_one, K.one_mem], end,
-  mul_mem' :=
-  begin
-    intros a b ha hb,
-    cases ha with a' ha,
-    cases hb with b' hb,
-    use a' * b',
-    simp [map_mul, K.mul_mem, *],
+  one_mem' := ⟨1, K.one_mem, f.map_one⟩,
+  mul_mem' := begin
+    rintro c d ⟨a, haK, rfl⟩ ⟨b, hbK, rfl⟩,
+    refine ⟨a * b, K.mul_mem haK hbK, f.map_mul a b⟩,
   end,
-  inv_mem' :=
-  begin
-    intros x hx,
-    cases hx with x' hx,
-    use x'⁻¹,
-    simp [map_inv, K.inv_mem, *],
+  inv_mem' := begin
+    intro x,
+    intro hx,
+    change ∃ a, _ at hx,
+    cases hx with a ha,
+    cases ha with haK hax,
+    change ∃ b, _,
+    use a⁻¹,
+    split,
+    { exact K.inv_mem haK },
+    { subst hax, apply f.map_inv }
   end,
 }
 
 /-- The preimage of a subgroup under a group homomorphism, as a subgroup. -/
 def comap (f : G →** H) (K : subgroup H) : subgroup G :=
 { carrier := {g : G | f g ∈ K },
-  one_mem' := begin simp [map_one, K.one_mem], end,
-  mul_mem' :=
-  begin
-    intros a b ha hb,
-    simp [map_mul, K.mul_mem, *] at *,
+  one_mem' := begin
+    simp [K.one_mem],
   end,
-  inv_mem' :=
-  begin
-    intros x hx,
-    simp [map_inv, K.inv_mem, *] at *,
+  mul_mem' := begin
+    intros a b ha hb,
+    have h := K.mul_mem ha hb,
+    rwa ← f.map_mul at h,
+  end,
+  inv_mem' := begin 
+    intros a ha,
+    replace ha := K.inv_mem ha,
+    rwa ← f.map_inv at ha,
   end,
 }
+
+lemma map_id (L : subgroup G) : (id G).map L = L :=
+begin
+  ext g,
+  split,
+  { intro h,
+    rcases h with ⟨x, hx1, rfl⟩,
+    exact hx1 },
+  { intro h,
+    use g,
+    exact ⟨h, rfl⟩ },
+end
 
 /-- Pushing a subgroup along one homomorphism and then another is equal to
   pushing it forward along the composite of the homomorphisms. -/
 lemma map_comp (φ : G →** H) (ψ : H →** K) (L : subgroup G) :
   (φ.comp ψ).map L = ψ.map (φ.map L) :=
 begin
-  ext,
+  ext x,
   split,
-  {
-    intro hx,
-    cases hx with x' hx,
-    simp [map, comp, *] at *,
-    use x',
+  { rintro ⟨g, hgL, rfl⟩,
+    use φ g,
     split,
-    { exact hx.1 },
-    { exact hx.2 },
-  },
-  {
-    intro hx,
-    cases hx with x' hx,
-    cases hx.1 with x'' hx',
-    use x'',
-    split,
-    { exact hx'.1 },
-    dsimp [comp],
-    have hx := hx.2,
-    rw ←hx'.2 at hx,
-    exact hx,
-  },
+    { exact ⟨g, hgL, rfl⟩ },
+    { refl } },
+  { rintro ⟨h, ⟨g, hgL, rfl⟩, rfl⟩,
+    exact ⟨g, hgL, rfl⟩ },
+end
+
+lemma comap_id (L : subgroup G) : (id G).comap L = L :=
+begin
+  ext g,
+  refl,
 end
 
 /-- Pulling a subgroup back along one homomorphism and then another, is equal
@@ -215,16 +219,7 @@ to pulling it back along the composite of the homomorphisms. -/
 lemma comap_comp (φ : G →** H) (ψ : H →** K) (L : subgroup K) :
   (φ.comp ψ).comap L = φ.comap (ψ.comap L) :=
 begin
-  ext,
-  split,
-  {
-    intro hx,
-    exact hx,
-  },
-  {
-    intro hx,
-    exact hx,
-  }
+  refl,
 end
 
 end my_group_hom
